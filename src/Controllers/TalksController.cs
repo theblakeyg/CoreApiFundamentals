@@ -46,8 +46,12 @@ namespace CoreCodeCamp.Controllers
     {
       try
       {
-        var talks = await _repository.GetTalkByMonikerAsync(moniker, id, true);
-        return _mapper.Map<TalkModel>(talks);
+        var talk = await _repository.GetTalkByMonikerAsync(moniker, id, true);
+        if (talk == null)
+        {
+          return NotFound("Cound not find talk");
+        }
+        return _mapper.Map<TalkModel>(talk);
       }
       catch (Exception)
       {
@@ -126,6 +130,32 @@ namespace CoreCodeCamp.Controllers
         }
 
         return BadRequest("Could not save Talk");
+      }
+      catch (Exception)
+      {
+        return StatusCode(StatusCodes.Status500InternalServerError, "Failed to get this Talk");
+      }
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(string moniker, int id)
+    {
+      try
+      {
+        var talk = await _repository.GetTalkByMonikerAsync(moniker, id);
+        if (talk == null)
+        {
+          return NotFound("Talk does not exist");
+        }
+
+        _repository.Delete(talk);
+
+        if (await _repository.SaveChangesAsync())
+        {
+          return Ok();
+        }
+
+        return BadRequest("Could not delete Talk");
       }
       catch (Exception)
       {
